@@ -141,14 +141,18 @@ namespace api_maui.Services
             var jwtExpireSeconds = int.Parse(_config["Jwt:ExpireSeconds"] ?? "900");
 
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.DisplayName ?? user.Email ?? user.PhoneNumber ?? ""),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
+{
+    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(ClaimTypes.Name, user.DisplayName ?? user.Email ?? ""),
+    new Claim(ClaimTypes.Role, user.Role)
+};
+
             if (!string.IsNullOrEmpty(user.Email))
-                claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+                claims.Add(new Claim(ClaimTypes.Email, user.Email));
+
+            if (!string.IsNullOrEmpty(user.PhoneNumber))
+                claims.Add(new Claim("phone", user.PhoneNumber));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

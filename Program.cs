@@ -3,6 +3,7 @@ using api_maui.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 
@@ -44,6 +45,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($" {context.Request.Method} {context.Request.Scheme}://{context.Request.Host}{context.Request.Path}");
+    await next();
+});
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -79,9 +87,15 @@ app.MapPost("/external-login", async (api_maui.DTOs.AuthDtos.ExternalLoginReques
 
 app.MapGet("/me", [Microsoft.AspNetCore.Authorization.Authorize] (ClaimsPrincipal user) =>
 {
-    var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var name = user.Identity?.Name;
-    return Results.Ok(new { id, name });
+    return Results.Ok(new
+    {
+        Id = user.FindFirstValue(ClaimTypes.NameIdentifier),
+        Email = user.FindFirstValue(ClaimTypes.Email),
+        Name = user.FindFirstValue(ClaimTypes.Name),
+        Phone = user.FindFirst("phone")?.Value,
+        Roles = user.FindAll(ClaimTypes.Role).Select(r => r.Value),
+        Provider = user.FindFirst("provider")?.Value
+    });
 });
 
 app.Run();
